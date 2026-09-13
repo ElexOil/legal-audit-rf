@@ -75,13 +75,18 @@ def check(text, groups, title):
 
 def fetch_url(url):
     import urllib.request, ssl
-    ctx = ssl.create_default_context()
-    ctx.check_hostname = False
-    ctx.verify_mode = ssl.CERT_NONE
     req = urllib.request.Request(url, headers={"User-Agent": "legal-audit-rf"})
-    body = urllib.request.urlopen(req, timeout=20, context=ctx).read().decode("utf-8", "ignore")
     scheme = "HTTPS" if url.lower().startswith("https") else "HTTP (!!! ПД по http недопустимо)"
-    return body, scheme
+    try:
+        body = urllib.request.urlopen(req, timeout=20).read().decode("utf-8", "ignore")
+        return body, scheme
+    except ssl.SSLError as e:
+        print(f"  ⚠️  Ошибка SSL-сертификата: {e}. Повтор с отключённой проверкой (результат недоверенный).")
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+        body = urllib.request.urlopen(req, timeout=20, context=ctx).read().decode("utf-8", "ignore")
+        return body, scheme
 
 
 def main():
